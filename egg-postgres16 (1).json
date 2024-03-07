@@ -5,27 +5,48 @@
         "update_url": null
     },
     "exported_at": "2024-03-07T14:00:42+01:00",
-    "name": "Postgres 16",
-    "author": "parker@parkervcp.com",
-    "description": "A default Postgres install that is not really editable.",
+    "name": "MySQL 8",
+    "author": "your_email@example.com",
+    "description": "A default MySQL install that is not really editable.",
     "features": null,
     "docker_images": {
-        "ghcr.io\/parkervcp\/yolks:postgres_16": "ghcr.io\/parkervcp\/yolks:postgres_16"
+        "mysql:8": "mysql:8"
     },
     "file_denylist": [],
-    "startup": "postgres  -D \/home\/container\/postgres_db\/",
+    "startup": "mysqld --user=mysql --datadir=/home/container/mysql_db/",
     "config": {
-        "files": "{\r\n    \"postgres_db\/postgresql.conf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"#port =\": \"port = {{server.build.default.port}}\",\r\n            \"#external_pid_file =\": \"external_pid_file = '\/home\/container\/postgres_db\/run\/postgres.pid'\",\r\n            \"#unix_socket_directories =\": \"unix_socket_directories = '\/home\/container\/postgres_db\/run\/'\"\r\n        }\r\n    }\r\n}",
+        "files": "{\r\n    \"mysql_db/my.cnf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"#port =\": \"port = {{server.build.default.port}}\",\r\n            \"#pid-file =\": \"pid-file = '/home/container/mysql_db/run/mysqld.pid'\",\r\n            \"#socket =\": \"socket = '/home/container/mysql_db/run/mysql.sock'\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": \"database system is ready to accept connections\"\r\n}",
         "logs": "{}",
         "stop": "^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n\r\n# Prompt user for MySQL configuration details\r\nread -p \"Enter MySQL root password: \" MYSQL_ROOT_PASSWORD\r\nread -p \"Enter MySQL user: \" MYSQL_USER\r\nread -p \"Enter MySQL user password: \" MYSQL_PASSWORD\r\nread -p \"Enter MySQL port (default is 3306): \" MYSQL_PORT\r\nMYSQL_PORT=${MYSQL_PORT:-3306}\r\n\r\n# Download and install MySQL server\r\napt-get update\r\napt-get install -y mysql-server\r\n\r\n# Start MySQL service\r\nservice mysql start\r\n\r\n# Set MySQL root password\r\nmysqladmin -u root password \"$MYSQL_ROOT_PASSWORD\"\r\n\r\n# Create a MySQL user and database\r\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;\"\r\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER '$MYSQL_USER'@'%' IDENTIFIED WITH 'mysql_native_password' BY '$MYSQL_PASSWORD';\"\r\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';\"\r\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"FLUSH PRIVILEGES;\"\r\n\r\n# Stop MySQL service\r\nservice mysql stop\r\n\r\n# Update MySQL configuration to allow remote connections\r\necho -e \"\\n# Custom rules\\nbind-address = 0.0.0.0\" >> \"\/etc\/mysql\/mysql.conf.d\/mysqld.cnf\"\r\necho -e \"\\n# Custom rules\\nport = $MYSQL_PORT\" >> \"\/etc\/mysql\/mysql.conf.d\/mysqld.cnf\"\r\n\r\n# Start MySQL service\r\nservice mysql start\r\n\r\necho -e \"MySQL setup complete. Done\"",
-            "container": "postgres:16-alpine",
+            "script": "#!/bin/bash\n\n# Use environment variables for MySQL configuration\nMYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-your_default_root_password}\nMYSQL_USER=${MYSQL_USER:-your_default_user}\nMYSQL_PASSWORD=${MYSQL_PASSWORD:-your_default_password}\nMYSQL_PORT=${MYSQL_PORT:-3306}\n\n# Download and install MySQL server\napt-get update\napt-get install -y mysql-server\n\n# Start MySQL service\nservice mysql start\n\n# Set MySQL root password\nmysqladmin -u root password \"$MYSQL_ROOT_PASSWORD\"\n\n# Create a MySQL user and database\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"FLUSH PRIVILEGES;\"\n\n# Stop MySQL service\nservice mysql stop\n\n# Update MySQL configuration to allow remote connections\nsed -i -e 's/#bind-address = 127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf\nsed -i -e 's/#port = 3306/port = $MYSQL_PORT/' /etc/mysql/mysql.conf.d/mysqld.cnf\n\n# Start MySQL service\nservice mysql start\n\necho -e \"MySQL setup complete. Done\"",
+            "container": "mysql:8",
             "entrypoint": "bash"
         }
     },
-    "variables": []
+    "variables": [
+        {
+            "name": "MYSQL_ROOT_PASSWORD",
+            "description": "MySQL root password",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_USER",
+            "description": "MySQL user",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_PASSWORD",
+            "description": "MySQL user password",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_PORT",
+            "description": "MySQL port",
+            "env_variable": true
+        }
+    ]
 }
