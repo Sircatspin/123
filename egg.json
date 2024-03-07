@@ -1,0 +1,31 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2024-03-07T14:00:42+01:00",
+    "name": "MySQL 8",
+    "author": "your_email@example.com",
+    "description": "A default MySQL install that is not really editable.",
+    "features": null,
+    "docker_images": {
+        "mysql:8": "mysql:8"
+    },
+    "file_denylist": [],
+    "startup": "mysqld --user=mysql --datadir=/home/container/mysql_db/",
+    "config": {
+        "files": "{\r\n    \"mysql_db/my.cnf\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"#port =\": \"port = {{server.build.default.port}}\",\r\n            \"#pid-file =\": \"pid-file = '/home/container/mysql_db/run/mysqld.pid'\",\r\n            \"#socket =\": \"socket = '/home/container/mysql_db/run/mysql.sock'\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \"database system is ready to accept connections\"\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n\n# Prompt user for MySQL configuration details\nread -p \"Enter MySQL root password: \" MYSQL_ROOT_PASSWORD\nread -p \"Enter MySQL user: \" MYSQL_USER\nread -p \"Enter MySQL user password: \" MYSQL_PASSWORD\nread -p \"Enter MySQL port (default is 3306): \" MYSQL_PORT\nMYSQL_PORT=${MYSQL_PORT:-3306}\n\n# Download and install MySQL server\napt-get update\napt-get install -y mysql-server\n\n# Start MySQL service\nservice mysql start\n\n# Set MySQL root password\nmysqladmin -u root password \"$MYSQL_ROOT_PASSWORD\"\n\n# Create a MySQL user and database\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"FLUSH PRIVILEGES;\"\n\n# Stop MySQL service\nservice mysql stop\n\n# Update MySQL configuration to allow remote connections\nsed -i -e 's/#bind-address = 127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf\nsed -i -e 's/#port = 3306/port = $MYSQL_PORT/' /etc/mysql/mysql.conf.d/mysqld.cnf\n\n# Start MySQL service\nservice mysql start\n\necho -e \"MySQL setup complete. Done\"",
+            "container": "mysql:8",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": []
+}
