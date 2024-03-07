@@ -22,10 +22,31 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n\n# Prompt user for MySQL configuration details\nread -p \"Enter MySQL root password: \" MYSQL_ROOT_PASSWORD\nread -p \"Enter MySQL user: \" MYSQL_USER\nread -p \"Enter MySQL user password: \" MYSQL_PASSWORD\nread -p \"Enter MySQL port (default is 3306): \" MYSQL_PORT\nMYSQL_PORT=${MYSQL_PORT:-3306}\n\n# Download and install MySQL server\napt-get update\napt-get install -y mysql-server\n\n# Start MySQL service\nservice mysql start\n\n# Set MySQL root password\nmysqladmin -u root password \"$MYSQL_ROOT_PASSWORD\"\n\n# Create a MySQL user and database\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"FLUSH PRIVILEGES;\"\n\n# Stop MySQL service\nservice mysql stop\n\n# Update MySQL configuration to allow remote connections\nsed -i -e 's/#bind-address = 127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf\nsed -i -e 's/#port = 3306/port = $MYSQL_PORT/' /etc/mysql/mysql.conf.d/mysqld.cnf\n\n# Start MySQL service\nservice mysql start\n\necho -e \"MySQL setup complete. Done\"",
+            "script": "#!/bin/bash\n\n# Use environment variables for MySQL configuration\nMYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-your_default_root_password}\nMYSQL_USER=${MYSQL_USER:-your_default_user}\nMYSQL_PASSWORD=${MYSQL_PASSWORD:-your_default_password}\nMYSQL_PORT=${MYSQL_PORT:-3306}\n\n# Download and install MySQL server\napt-get update\napt-get install -y mysql-server\n\n# Start MySQL service\nservice mysql start\n\n# Set MySQL root password\nmysqladmin -u root password \"$MYSQL_ROOT_PASSWORD\"\n\n# Create a MySQL user and database\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';\"\nmysql -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"FLUSH PRIVILEGES;\"\n\n# Stop MySQL service\nservice mysql stop\n\n# Update MySQL configuration to allow remote connections\nsed -i -e 's/#bind-address = 127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf\nsed -i -e 's/#port = 3306/port = $MYSQL_PORT/' /etc/mysql/mysql.conf.d/mysqld.cnf\n\n# Start MySQL service\nservice mysql start\n\necho -e \"MySQL setup complete. Done\"",
             "container": "mysql:8",
             "entrypoint": "bash"
         }
     },
-    "variables": []
+    "variables": [
+        {
+            "name": "MYSQL_ROOT_PASSWORD",
+            "description": "MySQL root password",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_USER",
+            "description": "MySQL user",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_PASSWORD",
+            "description": "MySQL user password",
+            "env_variable": true
+        },
+        {
+            "name": "MYSQL_PORT",
+            "description": "MySQL port",
+            "env_variable": true
+        }
+    ]
 }
